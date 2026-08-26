@@ -11,11 +11,15 @@ BASE_DIR = os.path.abspath(
 )
 
 MARKET_CHANNELS_FILE = os.path.join(
-    BASE_DIR, "datasets", "market_channels.csv"
+    BASE_DIR,
+    "datasets",
+    "market_channels.csv"
 )
 
 ARTISAN_PROFILES_FILE = os.path.join(
-    BASE_DIR, "datasets", "artisan_test_profiles.csv"
+    BASE_DIR,
+    "datasets",
+    "artisan_test_profiles.csv"
 )
 
 
@@ -25,6 +29,7 @@ ARTISAN_PROFILES_FILE = os.path.join(
 
 def normalize(value):
     """Convert text into a consistent format."""
+
     if value is None:
         return ""
 
@@ -36,12 +41,12 @@ def split_values(value):
     Convert pipe-separated CSV values into a list.
 
     Example:
-    'metal craft|tribal textile|jewellery'
+        'metal craft|tribal textile|jewellery'
 
     becomes:
-
-    ['metal craft', 'tribal textile', 'jewellery']
+        ['metal craft', 'tribal textile', 'jewellery']
     """
+
     if not value:
         return []
 
@@ -55,7 +60,12 @@ def split_values(value):
 def load_csv(filename):
     """Load a CSV file and return a list of dictionaries."""
 
-    with open(filename, "r", encoding="utf-8-sig") as file:
+    with open(
+        filename,
+        "r",
+        encoding="utf-8-sig"
+    ) as file:
+
         reader = csv.DictReader(file)
 
         return list(reader)
@@ -126,7 +136,9 @@ def target_market_match(artisan, channel):
 
     if target_market == "b2b":
 
-        value = normalize(channel.get("b2b"))
+        value = normalize(
+            channel.get("b2b")
+        )
 
         if value == "yes":
             return True
@@ -138,7 +150,9 @@ def target_market_match(artisan, channel):
 
     if target_market == "b2c":
 
-        value = normalize(channel.get("b2c"))
+        value = normalize(
+            channel.get("b2c")
+        )
 
         if value == "yes":
             return True
@@ -165,6 +179,56 @@ def document_readiness(artisan):
         return False
 
     return None
+
+
+# ============================================================
+# ELIGIBILITY CLASSIFICATION
+# ============================================================
+
+def classify_eligibility(channel):
+    """
+    Classify a market channel as:
+
+        ELIGIBLE
+        CONDITIONAL
+        NOT_ELIGIBLE
+
+    based on the eligibility text stored in the dataset.
+    """
+
+    eligibility_text = normalize(
+        channel.get("eligibility")
+    )
+
+    if not eligibility_text:
+        return "CONDITIONAL"
+
+    # Explicit exclusion
+    if (
+        "not eligible" in eligibility_text
+        or "ineligible" in eligibility_text
+    ):
+        return "NOT_ELIGIBLE"
+
+    # Conditional language
+    conditional_terms = [
+        "subject to",
+        "conditional",
+        "verify",
+        "applicable requirements",
+        "empanelment",
+        "onboarding requirements",
+        "registration",
+        "approval",
+        "requirements"
+    ]
+
+    for term in conditional_terms:
+
+        if term in eligibility_text:
+            return "CONDITIONAL"
+
+    return "ELIGIBLE"
 
 
 # ============================================================
@@ -196,19 +260,28 @@ def calculate_match(artisan, channel):
     )
 
     # --------------------------------------------------------
-    # Eligibility gate
+    # Eligibility classification
     # --------------------------------------------------------
 
-    eligibility_text = normalize(
-        channel.get("eligibility")
+    eligibility_status = classify_eligibility(
+        channel
     )
 
-    if "not eligible" in eligibility_text:
+    # --------------------------------------------------------
+    # NOT ELIGIBLE
+    # --------------------------------------------------------
+
+    if eligibility_status == "NOT_ELIGIBLE":
+
         return {
             "eligible": False,
+            "eligibility": "NOT_ELIGIBLE",
             "score": 0,
+            "match_level": "EXCLUDED",
             "reasons": [],
-            "warnings": ["Channel marked as not eligible."]
+            "warnings": [
+                "Channel is not eligible for this seller."
+            ]
         }
 
     # --------------------------------------------------------
@@ -217,70 +290,106 @@ def calculate_match(artisan, channel):
 
     score = 0
 
+    # --------------------------------------------------------
     # Category = 30 points
+    # --------------------------------------------------------
+
     if category is True:
+
         score += 30
+
         reasons.append(
             "Product category is compatible."
         )
 
     elif category is False:
+
         warnings.append(
             "Product category does not clearly match."
         )
 
     else:
+
         warnings.append(
             "Product category compatibility is unknown."
         )
 
-    # Seller = 30 points
+    # --------------------------------------------------------
+    # Seller type = 30 points
+    # --------------------------------------------------------
+
     if seller is True:
+
         score += 30
+
         reasons.append(
             "Seller type appears compatible."
         )
 
     elif seller is False:
+
         warnings.append(
             "Seller type does not clearly match."
         )
 
     else:
+
         warnings.append(
             "Seller eligibility could not be determined."
         )
 
+    # --------------------------------------------------------
     # B2B/B2C = 15 points
+    # --------------------------------------------------------
+
     if market is True:
+
         score += 15
+
         reasons.append(
             "Target market is compatible."
         )
 
     elif market is False:
+
         warnings.append(
             "Target market does not match."
         )
 
     else:
+
         warnings.append(
             "B2B/B2C suitability is unknown."
         )
 
+    # --------------------------------------------------------
     # Documents = 10 points
+    # --------------------------------------------------------
+
     if documents is True:
+
         score += 10
+
         reasons.append(
             "Seller documents are available."
         )
 
     elif documents is False:
+
         warnings.append(
             "Seller documents are not yet available."
         )
 
-    # Remaining profile completeness = 15 points
+    else:
+
+        warnings.append(
+            "Document availability is unknown."
+        )
+
+    # --------------------------------------------------------
+    # Product listing completeness = 15 points
+    # --------------------------------------------------------
+
     profile_fields = [
         "has_image",
         "has_description",
@@ -294,13 +403,16 @@ def calculate_match(artisan, channel):
         if normalize(
             artisan.get(field)
         ) == "yes":
+
             completed += 1
 
-    profile_score = (completed / 3) * 15
+    profile_score = (
+        completed / len(profile_fields)
+    ) * 15
 
     score += profile_score
 
-    if completed == 3:
+    if completed == len(profile_fields):
 
         reasons.append(
             "Product listing information is complete."
@@ -317,16 +429,31 @@ def calculate_match(artisan, channel):
     # --------------------------------------------------------
 
     if score >= 80:
+
         match_level = "HIGH"
 
     elif score >= 60:
+
         match_level = "MEDIUM"
 
     elif score >= 40:
+
         match_level = "LOW"
 
     else:
+
         match_level = "VERY LOW"
+
+    # --------------------------------------------------------
+    # Conditional eligibility warning
+    # --------------------------------------------------------
+
+    if eligibility_status == "CONDITIONAL":
+
+        warnings.append(
+            "Channel eligibility is conditional; "
+            "seller must satisfy the stated requirements."
+        )
 
     # --------------------------------------------------------
     # Final result
@@ -334,6 +461,7 @@ def calculate_match(artisan, channel):
 
     return {
         "eligible": True,
+        "eligibility": eligibility_status,
         "score": round(score, 2),
         "match_level": match_level,
         "reasons": reasons,
@@ -342,7 +470,7 @@ def calculate_match(artisan, channel):
 
 
 # ============================================================
-# RUN RECOMMENDATION ENGINE
+# RECOMMENDATION ENGINE
 # ============================================================
 
 def recommend_for_artisan(artisan, channels):
@@ -359,15 +487,31 @@ def recommend_for_artisan(artisan, channels):
         if result["eligible"]:
 
             recommendations.append({
+
                 "channel_id": channel.get("id"),
+
                 "channel_name": channel.get("name"),
-                "score": result["score"],
-                "match_level": result["match_level"],
-                "reasons": result["reasons"],
-                "warnings": result["warnings"]
+
+                "eligibility":
+                    result["eligibility"],
+
+                "score":
+                    result["score"],
+
+                "match_level":
+                    result["match_level"],
+
+                "reasons":
+                    result["reasons"],
+
+                "warnings":
+                    result["warnings"]
             })
 
+    # --------------------------------------------------------
     # Highest score first
+    # --------------------------------------------------------
+
     recommendations.sort(
         key=lambda item: item["score"],
         reverse=True
@@ -382,53 +526,86 @@ def recommend_for_artisan(artisan, channels):
 
 def main():
 
-    print("\n======================================")
-    print(" SHILPSETU AI - MARKET MATCHING ENGINE")
-    print("======================================\n")
+    print(
+        "\n======================================"
+    )
 
-    print("Loading datasets...")
+    print(
+        " SHILPSETU AI - MARKET MATCHING ENGINE"
+    )
+
+    print(
+        "======================================\n"
+    )
+
+    print(
+        "Loading datasets..."
+    )
+
+    # --------------------------------------------------------
+    # Load market channels
+    # --------------------------------------------------------
 
     channels = load_csv(
         MARKET_CHANNELS_FILE
     )
+
+    # --------------------------------------------------------
+    # Load artisan profiles
+    # --------------------------------------------------------
 
     artisans = load_csv(
         ARTISAN_PROFILES_FILE
     )
 
     print(
-        f"Market channels loaded: {len(channels)}"
+        f"Market channels loaded: "
+        f"{len(channels)}"
     )
 
     print(
-        f"Artisan profiles loaded: {len(artisans)}"
+        f"Artisan profiles loaded: "
+        f"{len(artisans)}"
     )
 
-    print("\n--------------------------------------")
+    print(
+        "\n--------------------------------------"
+    )
+
+    # --------------------------------------------------------
+    # Process each artisan
+    # --------------------------------------------------------
 
     for artisan in artisans:
 
         print(
-            f"\nARTISAN {artisan.get('artisan_id')}"
+            f"\nARTISAN "
+            f"{artisan.get('artisan_id')}"
         )
 
         print(
-            f"Craft: {artisan.get('craft_category')}"
+            f"Craft: "
+            f"{artisan.get('craft_category')}"
         )
 
         print(
-            f"Product: {artisan.get('product_name')}"
+            f"Product: "
+            f"{artisan.get('product_name')}"
         )
 
         print(
-            f"Seller: {artisan.get('seller_type')}"
+            f"Seller: "
+            f"{artisan.get('seller_type')}"
         )
 
         print(
-            f"Target market: {artisan.get('target_market')}"
+            f"Target market: "
+            f"{artisan.get('target_market')}"
         )
 
-        print("\nRECOMMENDATIONS:")
+        print(
+            "\nRECOMMENDATIONS:"
+        )
 
         recommendations = recommend_for_artisan(
             artisan,
@@ -443,6 +620,10 @@ def main():
 
             continue
 
+        # ----------------------------------------------------
+        # Display recommendations
+        # ----------------------------------------------------
+
         for index, recommendation in enumerate(
             recommendations,
             start=1
@@ -451,6 +632,11 @@ def main():
             print(
                 f"\n{index}. "
                 f"{recommendation['channel_name']}"
+            )
+
+            print(
+                f"   Eligibility: "
+                f"{recommendation['eligibility']}"
             )
 
             print(
@@ -463,26 +649,51 @@ def main():
                 f"{recommendation['match_level']}"
             )
 
-            print("   Reasons:")
+            # ------------------------------------------------
+            # Reasons
+            # ------------------------------------------------
 
-            for reason in recommendation["reasons"]:
+            if recommendation["reasons"]:
 
                 print(
-                    f"      ✓ {reason}"
+                    "   Reasons:"
                 )
+
+                for reason in recommendation[
+                    "reasons"
+                ]:
+
+                    print(
+                        f"      ✓ {reason}"
+                    )
+
+            # ------------------------------------------------
+            # Warnings
+            # ------------------------------------------------
 
             if recommendation["warnings"]:
 
-                print("   Warnings:")
+                print(
+                    "   Warnings:"
+                )
 
-                for warning in recommendation["warnings"]:
+                for warning in recommendation[
+                    "warnings"
+                ]:
 
                     print(
                         f"      ⚠ {warning}"
                     )
 
-        print("\n--------------------------------------")
+        print(
+            "\n--------------------------------------"
+        )
 
+
+# ============================================================
+# PROGRAM ENTRY POINT
+# ============================================================
 
 if __name__ == "__main__":
+
     main()
