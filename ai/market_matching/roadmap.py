@@ -144,7 +144,7 @@ def generate_roadmap(artisan):
 def main():
 
     print("\n======================================")
-    print(" SHILPSETU AI - SELLING ROADMAP")
+    print(" KAITHRA - SELLING ROADMAP")
     print("======================================\n")
 
     artisans = load_artisans(
