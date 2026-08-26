@@ -124,7 +124,43 @@ def display_result(result):
     print(
         f"Product: {result['product_name']}"
     )
+    # ========================================================
+    # 0. CRAFT CATEGORY MAPPING
+    # ========================================================
 
+    category_mapping = result["category_mapping"]
+
+    print("\n----------------------------------------------")
+    print("0. CRAFT CATEGORY STANDARDIZATION")
+    print("----------------------------------------------")
+
+    if category_mapping["matched"]:
+
+        print(
+            f"Standard Category: "
+            f"{category_mapping['category_name']}"
+        )
+
+        print(
+            f"Category ID: "
+            f"{category_mapping['category_id']}"
+        )
+
+        print(
+            f"Confidence: "
+            f"{category_mapping['confidence']}%"
+        )
+
+        print(
+            f"Source: "
+            f"{category_mapping['source']}"
+        )
+
+    else:
+
+        print(
+            "No verified standard category match found."
+        )
     # ========================================================
     # 1. MARKET RECOMMENDATIONS
     # ========================================================
