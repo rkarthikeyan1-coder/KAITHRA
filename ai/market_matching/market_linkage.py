@@ -4,6 +4,7 @@ import os
 from .matcher import load_csv, recommend_for_artisan
 from .readiness import load_artisans, calculate_readiness
 from .roadmap import generate_roadmap
+from .category_mapper import normalize_artisan_category
 
 
 # ============================================================
@@ -42,14 +43,21 @@ def get_market_linkage_result(artisan, channels):
 
     This function will later be used by M2/FastAPI.
     """
+    # --------------------------------------------------------
+    # 0. STANDARDIZE CRAFT CATEGORY
+    # --------------------------------------------------------
 
+    category_mapping = normalize_artisan_category(
+        artisan.get("craft_category")
+    )
     # --------------------------------------------------------
     # 1. MARKET MATCHING
     # --------------------------------------------------------
 
-    market_recommendations = recommend_for_artisan(
-        artisan,
-        channels
+ market_recommendations = recommend_for_artisan(
+    artisan_for_matching,
+    channels
+)
     )
 
     # --------------------------------------------------------
@@ -72,13 +80,15 @@ def get_market_linkage_result(artisan, channels):
     # FINAL M5 RESULT
     # --------------------------------------------------------
 
-    return {
-        "artisan_id": artisan.get("artisan_id"),
-        "product_name": artisan.get("product_name"),
-        "market_recommendations": market_recommendations,
-        "readiness": readiness,
-        "roadmap": roadmap
-    }
+        return {
+    "artisan_id": artisan.get("artisan_id"),
+    "product_name": artisan.get("product_name"),
+    "category_mapping": category_mapping,
+    "market_recommendations": market_recommendations,
+    "readiness": readiness,
+    "roadmap": roadmap
+}
+    
 
 
 # ============================================================
