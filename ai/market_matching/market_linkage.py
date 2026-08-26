@@ -5,6 +5,7 @@ from .matcher import load_csv, recommend_for_artisan
 from .readiness import load_artisans, calculate_readiness
 from .roadmap import generate_roadmap
 
+
 # ============================================================
 # FILE PATHS
 # ============================================================
@@ -103,7 +104,7 @@ def display_result(result):
 
     print("\n")
     print("==============================================")
-    print("       SHILPSETU AI - M5 MARKET LINKAGE")
+    print("       KAITHRA - M5 MARKET LINKAGE")
     print("==============================================")
 
     print(
@@ -144,15 +145,36 @@ def display_result(result):
                 f"{recommendation['channel_name']}"
             )
 
+            # ------------------------------------------------
+            # Eligibility
+            # ------------------------------------------------
+
+            print(
+                f"   Eligibility: "
+                f"{recommendation['eligibility']}"
+            )
+
+            # ------------------------------------------------
+            # Match Score
+            # ------------------------------------------------
+
             print(
                 f"   Match Score: "
                 f"{recommendation['score']}%"
             )
 
+            # ------------------------------------------------
+            # Match Level
+            # ------------------------------------------------
+
             print(
                 f"   Match Level: "
                 f"{recommendation['match_level']}"
             )
+
+            # ------------------------------------------------
+            # Reasons
+            # ------------------------------------------------
 
             if recommendation["reasons"]:
 
@@ -165,6 +187,10 @@ def display_result(result):
                     print(
                         f"      ✓ {reason}"
                     )
+
+            # ------------------------------------------------
+            # Warnings
+            # ------------------------------------------------
 
             if recommendation["warnings"]:
 
@@ -262,7 +288,7 @@ def display_result(result):
 def main():
 
     print(
-        "\nLoading ShilpSetu M5 datasets..."
+        "\nLoading KAITHRA M5 datasets..."
     )
 
     # --------------------------------------------------------
