@@ -162,7 +162,7 @@ def calculate_readiness(artisan):
 def main():
 
     print("\n======================================")
-    print(" SHILPSETU AI - SELLER READINESS")
+    print(" KAITHRA - SELLER READINESS")
     print("======================================\n")
 
     artisans = load_artisans(
