@@ -28,10 +28,20 @@ ARTISAN_PROFILES_FILE = os.path.join(
 
 
 # ============================================================
-# COMPLETE M5 PIPELINE
+# UNIFIED M5 MARKET-LINKAGE FUNCTION
 # ============================================================
 
-def process_artisan(artisan, channels):
+def get_market_linkage_result(artisan, channels):
+    """
+    Returns the complete M5 result for one artisan.
+
+    This combines:
+    1. Market matching
+    2. Seller readiness
+    3. Personalized roadmap
+
+    This function will later be used by M2/FastAPI.
+    """
 
     # --------------------------------------------------------
     # 1. MARKET MATCHING
@@ -59,20 +69,31 @@ def process_artisan(artisan, channels):
     )
 
     # --------------------------------------------------------
-    # FINAL RESULT
+    # FINAL M5 RESULT
     # --------------------------------------------------------
 
     return {
         "artisan_id": artisan.get("artisan_id"),
         "product_name": artisan.get("product_name"),
-
-        "market_recommendations":
-            market_recommendations,
-
+        "market_recommendations": market_recommendations,
         "readiness": readiness,
-
         "roadmap": roadmap
     }
+
+
+# ============================================================
+# PROCESS ONE ARTISAN
+# ============================================================
+
+def process_artisan(artisan, channels):
+    """
+    Process one artisan through the complete M5 pipeline.
+    """
+
+    return get_market_linkage_result(
+        artisan,
+        channels
+    )
 
 
 # ============================================================
@@ -94,9 +115,9 @@ def display_result(result):
         f"Product: {result['product_name']}"
     )
 
-    # --------------------------------------------------------
-    # MARKET RECOMMENDATIONS
-    # --------------------------------------------------------
+    # ========================================================
+    # 1. MARKET RECOMMENDATIONS
+    # ========================================================
 
     print("\n----------------------------------------------")
     print("1. MARKET RECOMMENDATIONS")
@@ -158,9 +179,9 @@ def display_result(result):
                         f"      ⚠ {warning}"
                     )
 
-    # --------------------------------------------------------
-    # READINESS
-    # --------------------------------------------------------
+    # ========================================================
+    # 2. SELLER READINESS
+    # ========================================================
 
     readiness = result["readiness"]
 
@@ -207,9 +228,9 @@ def display_result(result):
         f"{readiness['next_action']}"
     )
 
-    # --------------------------------------------------------
-    # ROADMAP
-    # --------------------------------------------------------
+    # ========================================================
+    # 3. PERSONALIZED SELLING ROADMAP
+    # ========================================================
 
     print("\n----------------------------------------------")
     print("3. PERSONALIZED SELLING ROADMAP")
@@ -236,7 +257,7 @@ def display_result(result):
 
 
 # ============================================================
-# MAIN
+# MAIN PROGRAM
 # ============================================================
 
 def main():
@@ -245,9 +266,17 @@ def main():
         "\nLoading ShilpSetu M5 datasets..."
     )
 
+    # --------------------------------------------------------
+    # LOAD MARKET CHANNELS
+    # --------------------------------------------------------
+
     channels = load_csv(
         MARKET_CHANNELS_FILE
     )
+
+    # --------------------------------------------------------
+    # LOAD ARTISAN PROFILES
+    # --------------------------------------------------------
 
     artisans = load_artisans(
         ARTISAN_PROFILES_FILE
