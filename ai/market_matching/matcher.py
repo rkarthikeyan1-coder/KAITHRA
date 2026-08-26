@@ -531,7 +531,7 @@ def main():
     )
 
     print(
-        " SHILPSETU AI - MARKET MATCHING ENGINE"
+        " KAITHRA - MARKET MATCHING ENGINE"
     )
 
     print(
