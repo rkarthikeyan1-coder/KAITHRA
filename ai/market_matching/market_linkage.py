@@ -1,4 +1,3 @@
-import csv
 import os
 
 from .matcher import load_csv, recommend_for_artisan
@@ -37,12 +36,14 @@ def get_market_linkage_result(artisan, channels):
     Returns the complete M5 result for one artisan.
 
     This combines:
-    1. Market matching
-    2. Seller readiness
-    3. Personalized roadmap
+    1. Craft category standardization
+    2. Market matching
+    3. Seller readiness
+    4. Personalized roadmap
 
     This function will later be used by M2/FastAPI.
     """
+
     # --------------------------------------------------------
     # 0. STANDARDIZE CRAFT CATEGORY
     # --------------------------------------------------------
@@ -50,14 +51,30 @@ def get_market_linkage_result(artisan, channels):
     category_mapping = normalize_artisan_category(
         artisan.get("craft_category")
     )
+
+    # --------------------------------------------------------
+    # PREPARE ARTISAN FOR MARKET MATCHING
+    # --------------------------------------------------------
+
+    if category_mapping["matched"]:
+
+        artisan_for_matching = artisan.copy()
+
+        artisan_for_matching["craft_category"] = (
+            category_mapping["category_name"]
+        )
+
+    else:
+
+        artisan_for_matching = artisan
+
     # --------------------------------------------------------
     # 1. MARKET MATCHING
     # --------------------------------------------------------
 
- market_recommendations = recommend_for_artisan(
-    artisan_for_matching,
-    channels
-)
+    market_recommendations = recommend_for_artisan(
+        artisan_for_matching,
+        channels
     )
 
     # --------------------------------------------------------
@@ -80,15 +97,14 @@ def get_market_linkage_result(artisan, channels):
     # FINAL M5 RESULT
     # --------------------------------------------------------
 
-        return {
-    "artisan_id": artisan.get("artisan_id"),
-    "product_name": artisan.get("product_name"),
-    "category_mapping": category_mapping,
-    "market_recommendations": market_recommendations,
-    "readiness": readiness,
-    "roadmap": roadmap
-}
-    
+    return {
+        "artisan_id": artisan.get("artisan_id"),
+        "product_name": artisan.get("product_name"),
+        "category_mapping": category_mapping,
+        "market_recommendations": market_recommendations,
+        "readiness": readiness,
+        "roadmap": roadmap
+    }
 
 
 # ============================================================
@@ -114,7 +130,7 @@ def display_result(result):
 
     print("\n")
     print("==============================================")
-    print("       KAITHRA - M5 MARKET LINKAGE")
+    print("          KAITHRA - M5 MARKET LINKAGE")
     print("==============================================")
 
     print(
@@ -124,8 +140,9 @@ def display_result(result):
     print(
         f"Product: {result['product_name']}"
     )
+
     # ========================================================
-    # 0. CRAFT CATEGORY MAPPING
+    # 0. CRAFT CATEGORY STANDARDIZATION
     # ========================================================
 
     category_mapping = result["category_mapping"]
@@ -161,6 +178,7 @@ def display_result(result):
         print(
             "No verified standard category match found."
         )
+
     # ========================================================
     # 1. MARKET RECOMMENDATIONS
     # ========================================================
@@ -324,7 +342,9 @@ def display_result(result):
             f"{item['status']}"
         )
 
-    print("\n==============================================\n")
+    print("\n==============================================")
+    print("                 END OF M5")
+    print("==============================================\n")
 
 
 # ============================================================
@@ -382,4 +402,5 @@ def main():
 # ============================================================
 
 if __name__ == "__main__":
+
     main()
