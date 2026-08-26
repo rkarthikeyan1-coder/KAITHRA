@@ -1,10 +1,9 @@
 import csv
 import os
 
-from matcher import load_csv, recommend_for_artisan
-from readiness import load_artisans, calculate_readiness
-from roadmap import generate_roadmap
-
+from .matcher import load_csv, recommend_for_artisan
+from .readiness import load_artisans, calculate_readiness
+from .roadmap import generate_roadmap
 
 # ============================================================
 # FILE PATHS
